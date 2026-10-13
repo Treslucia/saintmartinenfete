@@ -2,7 +2,7 @@
 title: "Repas d'automne"
 type: "repas"
 date: 2026-11-14
-startTime: "12:00"
+startTime: "20:00"
 
 location:
   name: "Salle des fêtes"
@@ -18,7 +18,7 @@ contact:
   
 registration:
   deadline: 2026-11-10
-  capacity: 200
+  capacity: 120
 
 prices:
   - label: "Adulte"
