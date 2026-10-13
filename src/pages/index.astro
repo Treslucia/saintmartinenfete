@@ -1,0 +1,270 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import EventCard from "../components/EventCard.astro";
+
+const manifestations = (await getCollection("manifestations"))
+  .filter((event) => event.data.status !== "draft");
+
+const aujourdHui = new Date();
+aujourdHui.setHours(0, 0, 0, 0);
+
+const prochainesManifestations = manifestations
+  .filter((event) => {
+    const date = new Date(event.data.date);
+    date.setHours(0, 0, 0, 0);
+    return date >= aujourdHui;
+  })
+  .sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf())
+  .slice(0, 3);
+---
+
+<BaseLayout
+  title="Saint-Martin-en-Fête | Comité des fêtes de Saint-Martin-le-Redon"
+  description="Saint-Martin-en-Fête fait vivre Saint-Martin-le-Redon avec des fêtes, repas, randonnées et rendez-vous conviviaux toute l'année."
+>
+  <section class="hero">
+    <div class="hero-content">
+      <p class="hero-kicker">Saint-Martin-le-Redon</p>
+      <h1>Bienvenue à<br />Saint-Martin-en-Fête</h1>
+      <p class="hero-text">
+        Au cœur du village, le comité des fêtes crée des moments de convivialité
+        et de partage.
+      </p>
+    </div>
+  </section>
+
+  <section class="events-section" aria-labelledby="prochains-rendez-vous">
+    <div class="section-heading">
+      <p class="section-kicker">Nos prochaines manifestations</p>
+      <h2 id="prochains-rendez-vous">À venir</h2>
+      <p class="section-intro">
+        Retrouvez les prochains rendez-vous proposés par Saint-Martin-en-Fête.
+      </p>
+    </div>
+
+    {
+      prochainesManifestations.length === 0 ? (
+        <p class="empty-state">Aucune manifestation à venir pour le moment.</p>
+      ) : (
+        <div class="events">
+          {prochainesManifestations.map((event) => (
+            <EventCard event={event} />
+          ))}
+        </div>
+      )
+    }
+
+    <p class="all-events">
+      <a href="/manifestations">
+        Voir toutes les manifestations
+        <span aria-hidden="true">→</span>
+      </a>
+    </p>
+  </section>
+
+  <section class="association" aria-labelledby="association-title">
+    <div class="association-content">
+      <p class="section-kicker">Qui sommes-nous ?</p>
+      <h2 id="association-title">L'association</h2>
+
+      <p>
+        Saint-Martin-en-Fête est le comité des fêtes du joli village lotois de
+        Saint-Martin-le-Redon. Notre association a pour objectif de faire vivre
+        notre village en organisant des fêtes et des activités pour la vie
+        sociale des habitants, en favorisant les rencontres et la solidarité
+        locale.
+      </p>
+
+      <p>
+        Tout au long de l'année, nous animons la vie locale à travers des
+        événements conviviaux : fête de village, repas, concerts, marchés
+        gourmands, randonnées, etc.
+      </p>
+
+      <a class="association-button" href="/contact">
+        Nous contacter
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+/* Encart de bienvenue séparé du menu */
+.hero {
+  width: min(900px, calc(100% - 2rem));
+  margin: 2.5rem auto 0;
+  padding: clamp(2.5rem, 6vw, 4.5rem) 1.5rem;
+
+  color: white;
+  text-align: center;
+  background: var(--color-green);
+
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgb(35 71 44 / 14%);
+}
+
+.hero-content {
+  width: min(100%, 700px);
+  margin: 0 auto;
+}
+
+.hero-kicker {
+  margin: 0 0 0.75rem;
+  color: #f3d9a4;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 0;
+  color: white;
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.hero-text {
+  max-width: 620px;
+  margin: 1.25rem auto 0;
+  color: white;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  line-height: 1.7;
+}
+
+
+  .all-events a,
+  .association-button {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.75rem 1.15rem;
+    border-radius: 9px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .hero-button {
+    margin-top: 2rem;
+    color: var(--color-green-dark);
+    background: white;
+  }
+
+  .hero-button:hover {
+    background: var(--color-cream);
+  }
+
+  .events-section,
+  .association {
+    width: min(100% - 2rem, var(--content-width));
+    margin: 0 auto;
+  }
+
+  .events-section {
+    padding: 4.5rem 0 1rem;
+  }
+  
+.events-section h2,
+.about-section h2 {
+  color: var(--color-terracotta, #B85C38);
+}
+
+  .section-heading {
+    max-width: 700px;
+    margin: 0 auto 2rem;
+    text-align: center;
+  }
+
+  .section-kicker {
+    color: var(--color-terracotta);
+  }
+
+  .section-heading h2,
+  .association h2 {
+    margin: 0;
+    color: var(--color-green);
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    line-height: 1.2;
+  }
+
+  .section-intro {
+    margin: 0.75rem 0 0;
+    color: var(--color-muted);
+  }
+
+  .events {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .all-events {
+    margin: 2rem 0 0;
+    text-align: center;
+  }
+
+  .all-events a,
+  .association-button {
+    color: var(--color-green);
+    border: 2px solid var(--color-green);
+  }
+
+  .all-events a:hover,
+  .association-button:hover {
+    color: white;
+    background: var(--color-green);
+  }
+
+  .empty-state {
+    padding: 2rem;
+    color: var(--color-muted);
+    text-align: center;
+    background: white;
+    border-radius: var(--radius);
+  }
+
+  .association {
+    margin-top: 4.5rem;
+    margin-bottom: 4rem;
+    padding: clamp(2rem, 5vw, 4rem);
+    text-align: center;
+    background: var(--color-cream-dark);
+    border-radius: var(--radius);
+  }
+
+  .association-content {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .association p:not(.section-kicker) {
+    margin: 1rem 0 0;
+    color: var(--color-muted);
+    line-height: 1.75;
+  }
+
+  .association-button {
+    margin-top: 1.5rem;
+  }
+
+  @media (max-width: 900px) {
+    .events {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 600px) {
+    .events {
+      grid-template-columns: 1fr;
+    }
+
+    .events-section {
+      padding-top: 3rem;
+    }
+  }
+</style>

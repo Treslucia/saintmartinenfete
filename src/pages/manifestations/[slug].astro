@@ -1,0 +1,577 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getManifestationStatus } from "../../lib/manifestations.ts";
+
+export async function getStaticPaths() {
+  const manifestations = (await getCollection("manifestations"))
+    .filter((event) => event.data.status !== "draft")
+    .sort(
+      (a, b) => a.data.date.valueOf() - b.data.date.valueOf(),
+    );
+
+  return manifestations.map((event, index) => ({
+    params: { slug: event.id },
+    props: {
+      event,
+      previousEvent: manifestations[index - 1] ?? null,
+      nextEvent: manifestations[index + 1] ?? null,
+    },
+  }));
+}
+
+const { event, previousEvent, nextEvent } = Astro.props;
+
+const status = getManifestationStatus(event.data);
+
+const { Content } = await render(event);
+
+const date = event.data.date.toLocaleDateString("fr-FR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+
+const statusLabel =
+  status === "open"
+    ? "Inscriptions ouvertes"
+    : status === "full"
+      ? "Complet"
+      : status === "closed"
+        ? "Inscriptions closes"
+        : status === "finished"
+          ? "Terminée"
+          : "Brouillon";
+---
+
+<BaseLayout
+  title={`${event.data.title} | Saint-Martin-en-Fête`}
+  description={event.data.description}
+  image={event.data.image}
+>
+  <article class="event-page">
+
+    <header class="event-header">
+      <p class="event-type">
+        {
+          event.data.type === "repas"
+            ? "🍽️ Repas"
+            : event.data.type === "randonnee"
+              ? "🥾 Randonnée"
+              : "📅 Manifestation"
+        }
+      </p>
+
+      <h1>{event.data.title}</h1>
+	  
+      <p class="event-date">{date}</p>
+
+{
+  event.data.registration && (
+    <p class:list={["event-status", `status-${status}`]}>
+      {statusLabel}
+    </p>
+  )
+}
+
+    </header>
+
+    {
+      event.data.image && (
+        <div class="event-image">
+          <img
+            src={event.data.image}
+            alt={`Illustration de la manifestation « ${event.data.title} »`}
+          />
+        </div>
+      )
+    }
+
+    <div class="event-content">
+
+      <section class="event-info">
+        <h2>Informations pratiques</h2>
+
+        <p>
+          <span aria-hidden="true">📍</span> <strong>{event.data.location.name}</strong>
+        </p>
+
+        {
+          event.data.location.address && (
+            <p>{event.data.location.address}</p>
+          )
+        }
+
+        {
+          event.data.location.postalCode && (
+            <p>
+              {event.data.location.postalCode}{" "}
+              {event.data.location.city}
+            </p>
+          )
+        }
+
+        {
+          !event.data.location.address &&
+            !event.data.location.postalCode && (
+              <p>{event.data.location.city}</p>
+            )
+        }
+		
+	{
+	  event.data.startTime && (
+		<p>
+		  <span aria-hidden="true">🕐</span> <strong>Horaire :</strong>{" "}
+		  {event.data.startTime}
+		  {event.data.endTime && ` – ${event.data.endTime}`}
+		</p>
+	  )
+	}		
+		
+      </section>
+
+      {
+        event.data.contact && (
+          <section class="contact">
+            <h2>Contact</h2>
+
+            {
+              event.data.contact.email && (
+                <p>
+                  <span aria-hidden="true">✉️</span>{" "}
+                  <a href={`mailto:${event.data.contact.email}`}>
+                    {event.data.contact.email}
+                  </a>
+                </p>
+              )
+            }
+
+            {
+              event.data.contact.phone && (
+                <p>
+                  <span aria-hidden="true">📞</span>{" "}
+                  <a href={`tel:${event.data.contact.phone}`}>
+                    {event.data.contact.phone}
+                  </a>
+                </p>
+              )
+            }
+          </section>
+        )
+      }
+
+
+		{
+		  event.data.registration && (
+			<section class="registration">
+			  <h2>Inscriptions</h2>
+
+			  {
+				status === "open" ? (
+				  <>
+					<p class="status-message status-open">
+					  <span aria-hidden="true">🟢</span> Les inscriptions sont ouvertes.
+					</p>
+
+					{
+					  event.data.registration.deadline && (
+						<p class="registration-deadline">
+						  <span aria-hidden="true">📅</span> Inscriptions jusqu'au{" "}
+						  {event.data.registration.deadline.toLocaleDateString("fr-FR", {
+							day: "numeric",
+							month: "long",
+							year: "numeric",
+						  })}
+						</p>
+					  )
+					}
+
+					{
+					  event.data.registration.url && (
+						<a
+						  class="registration-button"
+						  href={event.data.registration.url}
+                          aria-label={`S’inscrire à ${event.data.title}`}
+						  target="_blank"
+						  rel="noopener noreferrer"
+						>
+						  S'inscrire
+						</a>
+					  )
+					}
+				  </>
+				) : status === "full" ? (
+				  <p class="status-message status-full">
+					<span aria-hidden="true">🟠</span> Les inscriptions sont complètes.
+				  </p>
+				) : status === "closed" ? (
+				  <p class="status-message status-closed">
+					<span aria-hidden="true">🔴</span> Les inscriptions sont closes.
+				  </p>
+				) : status === "finished" ? (
+				  <p class="status-message status-finished">
+					<span aria-hidden="true">⚫</span> Cette manifestation est terminée.
+				  </p>
+				) : (
+				  <p>
+					Les inscriptions ne sont pas disponibles pour le moment.
+				  </p>
+				)
+			  }
+			</section>
+		  )
+		}
+
+
+      {
+        event.data.prices && event.data.prices.length > 0 && (
+			<section class="prices">
+			  <h2>Tarifs</h2>
+
+			  <div class="price-list">
+				{event.data.prices.map((price) => (
+				  <div class="price-item">
+					<div>
+					  <strong>{price.label}</strong>
+					  {price.description && (
+						<p>{price.description}</p>
+					  )}
+					</div>
+
+					<span class="price-amount">
+					  {price.amount} €
+					</span>
+				  </div>
+				))}
+			  </div>
+			</section>
+        )
+      }
+
+      <section class="event-description">
+        <Content />
+      </section>
+
+	<nav class="event-navigation" aria-label="Navigation entre les manifestations">
+	  {previousEvent ? (
+		<a href={`/manifestations/${previousEvent.id}`} class="event-navigation-link previous">
+		  ← {previousEvent.data.title}
+		</a>
+	  ) : (
+		<span></span>
+	  )}
+
+	  <a href="/manifestations" class="event-navigation-all">
+		Toutes les manifestations
+	  </a>
+
+	  {nextEvent ? (
+		<a href={`/manifestations/${nextEvent.id}`} class="event-navigation-link next">
+		  {nextEvent.data.title} →
+		</a>
+	  ) : (
+		<span></span>
+	  )}
+	</nav>
+
+    </div>
+
+  </article>
+</BaseLayout>
+
+<style>
+  .event-page {
+    width: min(100% - 2rem, 900px);
+    margin: 0 auto;
+    padding: 3rem 0 5rem;
+  }
+
+  .event-header {
+    margin-bottom: 2rem;
+  }
+
+  .event-type {
+    margin: 0 0 0.5rem;
+    color: var(--color-green);
+    font-weight: bold;
+  }
+
+  .event-status {
+	display: inline-block;
+	margin: 0 0 1rem;
+	padding: 0.45rem 0.8rem;
+	border-radius: 999px;
+	font-size: 0.9rem;
+	font-weight: bold;
+  }
+
+  .status-open {
+	background: #dff2e3;
+	color: #245c32;
+  }
+
+  .status-full {
+	background: #fff0d6;
+	color: #8a5700;
+  }
+
+  .status-closed {
+	background: #f8dddd;
+	color: #8a2929;
+  }
+
+  .status-finished {
+	background: #e5e5e5;
+	color: var(--color-muted);
+  }
+
+  .status-draft {
+	background: #eeeeee;
+	color: #666;
+  }
+
+  h1 {
+    margin: 0 0 1rem;
+    color: var(--color-green);
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    line-height: 1.15;
+  }
+
+.event-date {
+  margin: 0 0 0.75rem;
+  color: var(--color-green);
+  font-size: 1.2rem;
+  font-weight: bold;
+  line-height: 1.4;
+}
+
+  .event-time {
+    margin: 0;
+  }
+
+  .event-image {
+    width: 100%;
+    margin-bottom: 2.5rem;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+
+  .event-image img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .event-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .event-content section {
+    padding: 1.5rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgb(0 0 0 / 6%);
+  }
+
+  .event-content section h2 {
+    margin: 0 0 1rem;
+    color: var(--color-green);
+    font-size: 1.4rem;
+  }
+
+  .event-content p {
+    line-height: 1.6;
+  }
+
+  .registration-deadline {
+	margin: 0.75rem 0 0;
+	color: var(--color-muted);
+  }
+
+  .contact a {
+    color: var(--color-green);
+    font-weight: bold;
+    text-decoration: none;
+  }
+
+  .contact a:hover {
+    text-decoration: underline;
+  }
+
+  .registration-button {
+    display: inline-block;
+    margin-top: 1rem;
+    min-height: 48px;
+    padding: 0.8rem 1.2rem;
+    background: var(--color-green);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+  }
+
+  .registration-button:hover {
+    opacity: 0.9;
+  }
+
+.price-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.price-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--color-cream);
+  border-radius: 8px;
+}
+
+.price-item strong {
+  color: var(--color-green);
+}
+
+.price-item p {
+  margin: 0.25rem 0 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.price-amount {
+  flex-shrink: 0;
+  color: var(--color-green);
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.event-description :global(h2) {
+  margin: 2rem 0 1rem;
+  color: var(--color-green);
+  font-size: 1.6rem;
+  line-height: 1.3;
+}
+
+.event-description :global(h3) {
+  margin: 1.5rem 0 0.75rem;
+  color: #6b4f2a;
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+  .status-message {
+	margin: 0;
+	font-weight: bold;
+  }
+
+  .status-open {
+	color: #245c32;
+  }
+
+  .status-full {
+	color: #8a5700;
+  }
+
+  .status-closed {
+	color: #8a2929;
+  }
+
+  .status-finished {
+	color: var(--color-muted);
+  }
+
+
+.event-navigation {
+display: grid;
+grid-template-columns: 1fr auto 1fr;
+align-items: center;
+gap: 1rem;
+margin-top: 3rem;
+}
+
+.event-navigation-link,
+.event-navigation-all {
+color: var(--color-green);
+font-weight: bold;
+text-decoration: none;
+}
+
+.event-navigation-link:hover,
+.event-navigation-all:hover {
+text-decoration: underline;
+}
+
+.event-navigation-all {
+padding: 0.75rem 1.1rem;
+border: 2px solid var(--color-green);
+border-radius: 8px;
+text-align: center;
+text-decoration: none;
+}
+
+.event-navigation-all:hover {
+background: var(--color-green);
+color: white;
+text-decoration: none;
+}
+
+.event-navigation .previous {
+text-align: left;
+}
+
+.event-navigation .next {
+text-align: right;
+}
+
+@media (max-width: 700px) {
+.event-navigation {
+grid-template-columns: 1fr 1fr;
+}
+
+.event-navigation-all {
+grid-column: 1 / -1;
+grid-row: 1;
+}
+
+.event-navigation .previous {
+grid-column: 1;
+grid-row: 2;
+}
+
+.event-navigation .next {
+grid-column: 2;
+grid-row: 2;
+}
+}
+
+
+  @media (max-width: 600px) {
+    .event-page {
+      width: min(100% - 1.5rem, 900px);
+      padding: 2rem 0 3rem;
+    }
+
+    .event-image {
+      margin-bottom: 2rem;
+      border-radius: 8px;
+    }
+
+    .event-content {
+      gap: 1rem;
+    }
+
+    .event-content section {
+      padding: 1.25rem;
+      border-radius: 8px;
+    }
+
+    .event-content section h2 {
+      font-size: 1.25rem;
+    }
+  }
+</style>

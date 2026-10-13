@@ -1,0 +1,280 @@
+---
+import { getManifestationStatus } from "../lib/manifestations.ts";
+
+interface Props {
+  event: {
+    id: string;
+    data: {
+      title: string;
+      type: "repas" | "randonnee" | "réunion" | "autre";
+      date: Date;
+      description: string;
+      image?: string;
+      location: {
+        name: string;
+        city: string;
+      };
+      status: "draft" | "open" | "closed" | "full" | "finished";
+      registration?: {
+        deadline?: Date;
+      };
+    };
+  };
+  past?: boolean;
+}
+
+const { event, past = false } = Astro.props;
+
+const typeLabel =
+  event.data.type === "repas"
+    ? "Repas"
+    : event.data.type === "randonnee"
+      ? "Randonnée"
+      : event.data.type === "réunion"
+        ? "Réunion"
+        : "Manifestation";
+
+const status = getManifestationStatus(event.data);
+
+const statusLabel =
+  status === "open"
+    ? "Inscriptions ouvertes"
+    : status === "full"
+      ? "Complet"
+      : status === "closed"
+        ? "Inscriptions closes"
+        : status === "finished"
+          ? "Terminée"
+          : "Brouillon";
+---
+
+<article class:list={["event", { past }]}>
+  {event.data.image ? (
+    <div class="event-image">
+      <img
+        src={event.data.image}
+        alt={`Illustration de la manifestation « ${event.data.title} »`}
+        loading="lazy"
+      />
+    </div>
+  ) : (
+    <div
+      class:list={["event-placeholder", `placeholder-${event.data.type}`]}
+      aria-hidden="true"
+    >
+      <span>
+        {
+          event.data.type === "randonnee"
+            ? "🥾"
+            : event.data.type === "réunion"
+              ? "👥"
+              : "🍽️"
+        }
+      </span>
+    </div>
+  )}
+
+  <div class="event-body">
+    <p class="event-type">{typeLabel}</p>
+
+    <h3>{event.data.title}</h3>
+
+    <p class="date">
+      {event.data.date.toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })}
+    </p>
+
+    {
+      event.data.registration && (
+        <p class:list={["event-status", `status-${status}`]}>
+          {statusLabel}
+        </p>
+      )
+    }
+
+    <p class="location">
+      <span aria-hidden="true">📍</span>
+      {event.data.location.name}, {event.data.location.city}
+    </p>
+
+    <p class="description">{event.data.description}</p>
+
+    <a href={`/manifestations/${event.id}`}>
+		Voir la manifestation
+      <span aria-hidden="true">→</span>
+    </a>
+  </div>
+</article>
+
+<style>
+  .event {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: white;
+    border: 1px solid rgb(47 93 58 / 8%);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .event:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgb(37 37 37 / 12%);
+  }
+
+  .event-image,
+  .event-placeholder {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .event-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .event-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-green);
+    background: var(--color-green-soft);
+    font-size: 3.5rem;
+  }
+
+  .placeholder-repas {
+    background: #f4eadf;
+  }
+
+  .placeholder-randonnee {
+    background: var(--color-green-soft);
+  }
+
+  .placeholder-réunion {
+    background: #ece9e1;
+  }
+
+  .event-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 1.5rem;
+  }
+
+  .event-type {
+    margin: 0 0 0.45rem;
+    color: var(--color-terracotta);
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .event h3 {
+    margin: 0 0 0.75rem;
+    color: var(--color-green);
+    font-size: 1.4rem;
+    line-height: 1.25;
+  }
+
+  .date {
+    margin: 0 0 0.75rem;
+    color: var(--color-green);
+    font-weight: 750;
+  }
+
+  .location,
+  .description {
+    margin: 0 0 0.75rem;
+    line-height: 1.55;
+  }
+
+  .location {
+    color: var(--color-muted);
+  }
+
+  .description {
+    color: var(--color-ink);
+  }
+
+  .event-status {
+    display: inline-flex;
+    width: fit-content;
+    min-height: 32px;
+    align-items: center;
+    margin: 0 0 0.75rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 800;
+  }
+
+  .status-open {
+    color: #245c32;
+    background: #dff2e3;
+  }
+
+  .status-full {
+    color: #704700;
+    background: #fff0d6;
+  }
+
+  .status-closed {
+    color: #762525;
+    background: #f8dddd;
+  }
+
+  .status-finished {
+    color: #4f4f4f;
+    background: #e5e5e5;
+  }
+
+  .event a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: auto;
+    padding-top: 1rem;
+    color: var(--color-green);
+    font-weight: 800;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  .event a:hover {
+    color: var(--color-terracotta);
+  }
+
+  .event.past {
+    opacity: 0.76;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .event {
+      transition: none;
+    }
+
+    .event:hover {
+      transform: none;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .event-body {
+      padding: 1.25rem;
+    }
+  }
+</style>

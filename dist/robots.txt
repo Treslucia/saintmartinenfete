@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://saintmartinenfete.fr/sitemap-index.xml

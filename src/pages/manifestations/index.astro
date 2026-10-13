@@ -1,0 +1,168 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import EventCard from "../../components/EventCard.astro";
+
+const manifestations = (await getCollection("manifestations"))
+  .filter((event) => event.data.status !== "draft");
+
+const aujourdHui = new Date();
+aujourdHui.setHours(0, 0, 0, 0);
+
+const manifestationsAVenir = manifestations
+  .filter((event) => {
+    const date = new Date(event.data.date);
+    date.setHours(0, 0, 0, 0);
+    return date >= aujourdHui;
+  })
+  .sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf());
+
+const manifestationsPassees = manifestations
+  .filter((event) => {
+    const date = new Date(event.data.date);
+    date.setHours(0, 0, 0, 0);
+    return date < aujourdHui;
+  })
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BaseLayout
+  title="Manifestations | Saint-Martin-en-Fête"
+  description="Découvrez les fêtes, repas, randonnées et autres manifestations organisés par Saint-Martin-en-Fête à Saint-Martin-le-Redon."
+>
+  <section class="hero">
+    <div class="hero-content">
+      <p class="hero-kicker">Les rendez-vous du comité</p>
+      <h1>Nos manifestations</h1>
+      <p class="hero-text">
+        Retrouvez les événements organisés tout au long de l'année par
+        Saint-Martin-en-Fête : fêtes, repas, concerts, randonnées et rendez-vous
+        conviviaux.
+      </p>
+    </div>
+  </section>
+
+  <section class="events-section" aria-labelledby="a-venir">
+    <h2 id="a-venir" class="manifestations-section-title">À venir</h2>
+
+    {
+      manifestationsAVenir.length === 0 ? (
+        <p class="empty-state">Aucune manifestation à venir pour le moment.</p>
+      ) : (
+        <div class="events">
+          {manifestationsAVenir.map((event) => (
+            <EventCard event={event} />
+          ))}
+        </div>
+      )
+    }
+  </section>
+
+  <section class="events-section past-section" aria-labelledby="passees">
+    <h2 id="passees" class="manifestations-section-title">
+      Manifestations passées
+    </h2>
+    <p class="section-intro">
+      Retrouvez ici les manifestations déjà organisées par Saint-Martin-en-Fête.
+    </p>
+
+    {
+      manifestationsPassees.length === 0 ? (
+        <p class="empty-state">Aucune manifestation passée pour le moment.</p>
+      ) : (
+        <div class="events">
+          {manifestationsPassees.map((event) => (
+            <EventCard event={event} past />
+          ))}
+        </div>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding: clamp(3.5rem, 8vw, 5.5rem) 1.5rem;
+    color: white;
+    text-align: center;
+    background: var(--color-green);
+  }
+
+  .hero-content {
+    width: min(100%, 760px);
+    margin: 0 auto;
+  }
+
+  .hero-kicker {
+    margin: 0 0 0.75rem;
+    color: rgb(255 255 255 / 80%);
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .hero h1 {
+    margin: 0;
+    font-size: clamp(2.3rem, 6vw, 3.8rem);
+    line-height: 1.1;
+  }
+
+  .hero-text {
+    max-width: 680px;
+    margin: 1.25rem auto 0;
+    color: rgb(255 255 255 / 90%);
+    font-size: 1.1rem;
+    line-height: 1.7;
+  }
+
+  .events-section {
+    width: min(100% - 2rem, var(--content-width));
+    margin: 0 auto;
+    padding: 3.5rem 0 1rem;
+  }
+
+  .past-section {
+    padding-top: 2.5rem;
+    padding-bottom: 2rem;
+  }
+
+  .manifestations-section-title {
+    margin: 0 0 1.5rem;
+    padding-bottom: 0.75rem;
+    color: var(--color-green);
+    font-size: 1.7rem;
+    border-bottom: 2px solid var(--color-green);
+  }
+
+  .section-intro {
+    margin: -0.5rem 0 1.5rem;
+    color: var(--color-muted);
+  }
+
+  .events {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .empty-state {
+    padding: 2rem;
+    color: var(--color-muted);
+    text-align: center;
+    background: white;
+    border-radius: var(--radius);
+  }
+
+  @media (max-width: 900px) {
+    .events {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 600px) {
+    .events {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
