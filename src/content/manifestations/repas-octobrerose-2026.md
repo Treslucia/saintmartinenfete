@@ -24,7 +24,7 @@ prices:
   - label: "Adulte"
     amount: 12
 
-status: "open"
+status: "full"
 featured: true
 ---
 

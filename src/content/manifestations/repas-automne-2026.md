@@ -35,4 +35,10 @@ Saint-Martin-en-Fête vous invite à son traditionnel repas d'automne.
 
 ### Au menu
 
-Le menu sera communiqué très prochainement.
+Apéritif accompagnées de châtaignes grillées<br>
+Potage de citrouille<br>
+Sauté de porc aux châtaignes et champignons<br>
+Fromage<br>
+Dessert<br>
+Café<br>
+Vin compris<br>
